@@ -1,0 +1,26 @@
+#content {
+  width: 1024px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+#control {
+  text-align: center;
+  clear: both;
+}
+
+#followers {
+  float: left;
+  width: 40%;
+}
+
+#unfollowers {
+}
+
+td {
+   padding-right: .6em;
+}
+
+th {
+   text-align: left;
+}
