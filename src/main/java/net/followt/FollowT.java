@@ -3,6 +3,7 @@ package net.followt;
 import java.net.UnknownHostException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
@@ -143,6 +144,11 @@ public class FollowT {
         return (Date)result.get("beginning_of_time");
     }
     
+    public Date beginningOfTime (String screenName) {
+        int id = userDB.getId(screenName);
+        return beginningOfTime(id);
+    }
+    
     /**
      * Returns the list of users which have started following the given user in the
      * period between now and <code>interval</code> milliseconds in the past. 
@@ -175,6 +181,36 @@ public class FollowT {
         return result;
     }
     
+    public int newFollowersOnDay (String screenName, Date d) {
+        int followee = userDB.getId(screenName);
+        Calendar c = Calendar.getInstance();
+        c.setTime(d);
+        c.set(Calendar.HOUR_OF_DAY, 0);
+        c.set(Calendar.MINUTE, 0);
+        c.set(Calendar.SECOND, 0);
+        Date start = c.getTime();
+        Date end = new Date(c.getTimeInMillis() + 86400000);
+        int result = fhistory.find(new BasicDBObject("followee", followee)
+                                             .append("start", new BasicDBObject ("$gte", start)
+                                                                         .append("$lt", end))).count();
+        return result;                             
+    }
+
+    public int lostFollowersOnDay (String screenName, Date d) {
+        int followee = userDB.getId(screenName);
+        Calendar c = Calendar.getInstance();
+        c.setTime(d);
+        c.set(Calendar.HOUR_OF_DAY, 0);
+        c.set(Calendar.MINUTE, 0);
+        c.set(Calendar.SECOND, 0);
+        Date start = c.getTime();
+        Date end = new Date(c.getTimeInMillis() + 86400000);
+        int result = fhistory.find(new BasicDBObject("followee", followee)
+                                             .append("end", new BasicDBObject ("$gte", start)
+                                                                       .append("$lt", end))).count();
+        return result;                             
+    }
+
     private static FollowT instance = null;
     
     public static FollowT getInstance() {
@@ -183,7 +219,18 @@ public class FollowT {
     }
     
     public static void main(String[] args) {
-        System.out.println(getInstance().getRecentFollowers("kathrinpassig",86400000).size());
+        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+        String screenName = "db2";
+        FollowT f = getInstance();
+        Date bot = f.beginningOfTime(screenName);
+        Calendar c = Calendar.getInstance();
+        c.setTime(bot);
+        while (c.getTimeInMillis() < System.currentTimeMillis()) {
+            c.add(Calendar.DAY_OF_MONTH, 1);
+            int newFollowers = f.newFollowersOnDay(screenName, c.getTime());
+            int lostFollowers = f.lostFollowersOnDay(screenName, c.getTime());
+            System.out.format("%s %3d %3d\n", df.format(c.getTime()), newFollowers, lostFollowers);
+        }
     }
     
 }
